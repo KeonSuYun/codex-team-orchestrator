@@ -1,0 +1,17 @@
+{
+  "name": "codex-team-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Leader-led Codex project-thread teams.",
+  "license": "MIT",
+  "scripts": {
+    "validate": "python %USERPROFILE%/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/codex-team-orchestrator"
+  },
+  "keywords": [
+    "codex",
+    "skill",
+    "agents",
+    "team",
+    "orchestration"
+  ]
+}

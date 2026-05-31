@@ -1,0 +1,40 @@
+{
+  "name": "codex-team-orchestrator",
+  "version": "0.1.0",
+  "description": "Leader-led Codex project-thread teams.",
+  "author": {
+    "name": "KeonSuYun",
+    "url": "https://github.com/KeonSuYun"
+  },
+  "homepage": "https://github.com/KeonSuYun/codex-team-orchestrator",
+  "repository": "https://github.com/KeonSuYun/codex-team-orchestrator",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "skill",
+    "agents",
+    "team",
+    "orchestration"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Team Orchestrator",
+    "shortDescription": "Leader-led Codex project-thread teams.",
+    "longDescription": "Use the current conversation as Leader, choose roles, create visible Goal-mode project-thread teammates, store thread ids, and route teammate updates through Leader.",
+    "developerName": "KeonSuYun",
+    "category": "Productivity",
+    "capabilities": [
+      "Code",
+      "Plan",
+      "Review"
+    ],
+    "websiteURL": "https://github.com/KeonSuYun/codex-team-orchestrator",
+    "privacyPolicyURL": "https://github.com/KeonSuYun/codex-team-orchestrator/blob/main/README.md",
+    "termsOfServiceURL": "https://github.com/KeonSuYun/codex-team-orchestrator/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Use codex-team-orchestrator. Act as Leader, ask me for roles if needed, then create useful Goal-mode teammates."
+    ],
+    "screenshots": [],
+    "brandColor": "#2563EB"
+  }
+}
