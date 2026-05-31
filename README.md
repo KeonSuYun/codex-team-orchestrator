@@ -57,7 +57,7 @@ Chinese works too:
 - Leader creates teammates only when useful.
 - Teammates are visible Codex project threads.
 - New teammates start with `/goal`.
-- Role choice can happen through Codex Plan-mode options.
+- Role choice can happen through Codex Plan-mode options, including while Goal mode is active.
 - User can name roles directly in natural language.
 - Roster stores teammate thread ids.
 - Teammates report through `MESSAGE_TO_LEADER` and `STATUS_PACKET`.
@@ -69,7 +69,7 @@ Chinese works too:
 Priority:
 
 1. Roles named by the user.
-2. Codex Plan-mode role choice, when available.
+2. Codex Plan-mode role choice, when available, including inside Goal mode.
 3. Saved role catalog, when requested.
 4. Leader chooses the smallest useful team.
 

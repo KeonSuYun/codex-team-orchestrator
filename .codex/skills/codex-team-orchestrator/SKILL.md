@@ -49,11 +49,13 @@ Keep exact identifiers unchanged when needed: file paths, commands, JSON keys, r
 Resolve roles in this order:
 
 1. Roles named by the user in natural language.
-2. Codex Plan-mode role choice using `request_user_input`, if available.
+2. Codex role choice using `request_user_input`, if available.
 3. Saved role catalog, only if the user asks for reusable/preset roles.
 4. Leader chooses the smallest useful role set.
 
 If roles are unclear and teammates would help, ask one role-selection question before creating teammates.
+
+Goal mode can still use Plan-style questions when `request_user_input` is exposed for the current turn. Do not treat Goal mode and Plan questions as mutually exclusive.
 
 When `request_user_input` is available:
 
@@ -62,6 +64,7 @@ When `request_user_input` is available:
 - Use 2-3 mutually exclusive options.
 - Do not add an `Other` option; Codex adds free-form Other automatically.
 - Write labels and descriptions in the user's language.
+- If `request_user_input` is unavailable, ask the same role question in plain text.
 
 Suggested choices:
 
@@ -78,7 +81,7 @@ Use thread tools when available:
 - `codex_app.send_message_to_thread`
 - `codex_app.list_threads`
 - `codex_app.set_thread_title`
-- `request_user_input` when available in Plan mode
+- `request_user_input` when available, including inside a Goal-mode turn
 - current Leader goal tools: `get_goal`, `create_goal`, `update_goal`
 
 Do not use `multi_agent_v1.spawn_agent` for teammates unless the user explicitly changes the design.
