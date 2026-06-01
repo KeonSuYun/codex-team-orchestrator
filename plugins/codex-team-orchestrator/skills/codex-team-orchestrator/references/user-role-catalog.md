@@ -6,7 +6,7 @@ All user-facing explanations about role catalogs should use the user's language.
 
 ## Purpose
 
-A role catalog is a pool of possible teammates. It is not an instruction to create every role. The Leader still starts Leader-only, decides whether teammates are useful, then selects the smallest useful subset.
+A role catalog is a pool of possible teammates. It is not an instruction to create every role. For explicit orchestrator requests, the Leader should select the smallest useful subset before implementation unless the user chose Leader-only. For implicit or tiny tasks, Leader-only remains allowed after a brief explanation.
 
 Use `policy: "suggested"` for flexible teams. Use `policy: "locked"` when the user wants the Leader to stay inside a fixed set of roles.
 

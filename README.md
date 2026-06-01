@@ -2,7 +2,7 @@
 
 Leader-led Codex project-thread teams.
 
-Use one Codex conversation as the Leader. The Leader can ask which roles you want, create visible project-thread teammates, start them with `/goal`, keep their thread ids in a roster, and route member updates back through the Leader.
+Use one Codex conversation as the Leader. The Leader can ask which roles you want, create visible project-thread teammates, verify task-scoped goals, keep their thread ids in a roster, and route member updates back through the Leader.
 
 ## Install
 
@@ -54,15 +54,28 @@ Chinese works too:
 ## What You Get
 
 - Current conversation acts as Leader by default.
-- Leader creates teammates only when useful.
+- When explicitly invoked, Leader announces the team decision before implementation.
+- Leader-only is allowed for simple tasks, but Leader must say why no teammate threads are being created.
+- If you explicitly ask for a team, multiple agents, members, or Boss role assignment, Leader creates or reuses teammates unless you choose Leader-only.
 - Teammates are visible Codex project threads.
-- New teammates start with `/goal`.
+- Each teammate assignment uses an explicit `create_goal` / `get_goal` handshake; teammates complete or block goals after reporting results so idle threads do not keep consuming tokens.
+- Token-saving keeps briefs compact, but does not remove necessary context, acceptance criteria, dependencies, handoffs, critique, or review.
+- Leader keeps the team working like a real team: clear ownership, distinct roles, explicit handoffs, surfaced disagreement, and review before risky integration.
 - Role choice can happen through Codex Plan-mode options, including while Goal mode is active.
 - User can name roles directly in natural language.
 - Roster stores teammate thread ids.
 - Teammates report through `MESSAGE_TO_LEADER` and `STATUS_PACKET`.
 - Leader monitors teammates with `read_thread`.
+- Leader keeps a lightweight task board, uses teammate messages as a mailbox, and tracks statuses such as active, blocked, complete, failed, and goal_unconfirmed.
 - Replies use the user's language.
+
+## Goal Control
+
+- Start work by asking the teammate to call `get_goal`, then `create_goal` if needed, then `get_goal` again.
+- Treat `get_goal.status=active` as the success signal.
+- Pause or wait by asking the teammate to mark its goal `blocked`.
+- Resume by asking the teammate to mark the old blocked goal `complete`, then create a new goal.
+- Use automations only to wake the Leader for periodic monitoring; automation `ACTIVE/PAUSED` does not pause teammate goals.
 
 ## Role Choice
 
@@ -75,15 +88,21 @@ Priority:
 
 Example roles are not fixed. Use whatever fits the task.
 
+## 🙏 特别感谢
+
+| 社区 | 说明 |
+| --- | --- |
+| [LINUX DO](https://linux.do) | [LINUX DO](https://linux.do) - 新的理想型社区。 |
+
 ## Roster
 
-Rosters are stored under:
+Rosters are stored in the project by default:
 
 ```text
-$CODEX_HOME/team-rosters/
+<project_root>/.codex/team-rosters/
 ```
 
-Fallback:
+Fallback only when there is no project root or the user wants a cross-project team:
 
 ```text
 ~/.codex/team-rosters/

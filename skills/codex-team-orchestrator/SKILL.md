@@ -1,223 +1,221 @@
 ---
 name: codex-team-orchestrator
-description: "Run a Leader-led Codex team inside the app. The current conversation acts as Leader by default, can ask the user to choose roles through Codex Plan-mode choices, creates visible project-thread teammates with `/goal`, stores teammate thread ids in a roster, routes member messages through Leader, and uses the user's language."
+description: "Run a lightweight Leader-led Codex team inside the app. Use when the user wants one Codex conversation to coordinate visible teammate project threads, choose or ask for roles, delegate work with verified goal-tool handshakes, store thread ids in a roster, minimize token-heavy cross-thread messages, and communicate in the user's language."
 ---
 
 # Codex Team Orchestrator
 
-## Purpose
+## Defaults
 
-Use this skill when the user wants a Leader/Boss to split a task across visible Codex project-thread agents.
+- Treat the current conversation as Leader unless the user asks for a durable Leader thread.
+- If this skill is explicitly named by the user, do orchestration first. Do not silently collapse into direct implementation.
+- For any explicit orchestrator request, announce a visible team decision before implementation or file edits.
+- Leader-only is allowed for simple, low-risk tasks, but only after telling the user why no teammates are being created.
+- If the user explicitly asks for a team, multiple agents, members, or Boss role assignment, create or reuse teammates unless the user chooses Leader-only.
+- Teammates are normal Codex project threads created with `codex_app.create_thread`.
+- Do not use temporary subagents for teammates unless the user explicitly changes the design.
+- Use the user's language for replies, teammate prompts, questions, and summaries.
+- Store thread ids in the project by default: `<project_root>/.codex/team-rosters/`.
+- Use `$CODEX_HOME/team-rosters/` or `C:\Users\<user>\.codex\team-rosters\` only when there is no project root or the user asks for a cross-project team.
 
-Default behavior:
+## Tools
 
-- The current conversation is the Leader.
-- Start with no teammates.
-- Create teammates only when roles, parallel work, review, or long-lived context are useful.
-- Teammates must be normal Codex project threads created with `codex_app.create_thread`.
-- Every created Leader or teammate thread should start with `/goal`.
-- Store thread ids in a roster so the user does not copy ids manually.
+Use these when available:
 
-## User Experience
+- Thread tools: `create_thread`, `send_message_to_thread`, `read_thread`, `list_threads`, `set_thread_title`.
+- Choice UI: `request_user_input`, including inside Goal mode when exposed.
+- Goal tools in the active thread: `get_goal`, `create_goal`, `update_goal`.
+- Automation: `automation_update` only for Leader monitoring or scheduled follow-up.
 
-Everything happens inside Codex. Do not tell the user to run scripts, edit JSON, copy thread ids, or manually create conversations.
-
-The user can:
-
-- Tell Leader to choose roles.
-- Name roles in natural language.
-- Ask Leader to show a Codex Plan-mode role choice.
-- Define a reusable role catalog in plain language.
-
-Examples:
-
-```text
-使用 codex-team-orchestrator 做这个任务，角色你来决定。
-使用 codex-team-orchestrator，用产品经理、前端开发、后端开发、严苛用户。
-使用 codex-team-orchestrator，先问我这次要什么团队角色。
-以后这个项目默认角色池是：产品经理、前端开发、后端开发、严苛用户。策略是 locked。
-```
-
-## Language
-
-Use the user's language for all user-facing text, teammate prompts, role-selection questions, status reports, and summaries.
-
-Keep exact identifiers unchanged when needed: file paths, commands, JSON keys, role slugs, thread ids, API names, and code symbols.
+Do not claim a goal, pause, or automation state was changed unless the relevant tool or target thread reported it.
 
 ## Role Selection
 
 Resolve roles in this order:
 
-1. Roles named by the user in natural language.
-2. Codex role choice using `request_user_input`, if available.
-3. Saved role catalog, only if the user asks for reusable/preset roles.
+1. User-named roles.
+2. One `request_user_input` role question, if useful and available.
+3. Saved role catalog, only when the user asks for reusable/default roles.
 4. Leader chooses the smallest useful role set.
 
-If roles are unclear and teammates would help, ask one role-selection question before creating teammates.
+If asking with `request_user_input`, use 2-3 choices, put the recommended one first, and write labels in the user's language. If the tool is unavailable, ask the same question in plain text.
 
-Goal mode can still use Plan-style questions when `request_user_input` is exposed for the current turn. Do not treat Goal mode and Plan questions as mutually exclusive.
+When the user explicitly invokes this skill and roles are unclear, prefer a small team choice over Leader-only. For product or coding tasks, a useful default is:
 
-When `request_user_input` is available:
+- builder/implementer for changes
+- reviewer or QA for critique and acceptance checks
+- optional product/design role when requirements or UX are unclear
 
-- Use one question.
-- Put the recommended option first.
-- Use 2-3 mutually exclusive options.
-- Do not add an `Other` option; Codex adds free-form Other automatically.
-- Write labels and descriptions in the user's language.
-- If `request_user_input` is unavailable, ask the same role question in plain text.
+Leader may still implement final integration, but should not start by doing the whole task alone after an explicit orchestrator request.
 
-Suggested choices:
+## Visible Team Decision
 
-- Leader 自动选择（Recommended）
-- 软件小队
-- 审查小队
-
-## Required Tools
-
-Use thread tools when available:
-
-- `codex_app.create_thread`
-- `codex_app.read_thread`
-- `codex_app.send_message_to_thread`
-- `codex_app.list_threads`
-- `codex_app.set_thread_title`
-- `request_user_input` when available, including inside a Goal-mode turn
-- current Leader goal tools: `get_goal`, `create_goal`, `update_goal`
-
-Do not use `multi_agent_v1.spawn_agent` for teammates unless the user explicitly changes the design.
-
-## Goal Mode
-
-- Current Leader: use `create_goal` if available and no active goal exists.
-- New Leader or teammate project threads: initial prompt must begin with `/goal`.
-- Existing teammate threads: send a `/goal` follow-up only if they are not already operating under a goal.
-- After creating or messaging a `/goal` thread, inspect with `read_thread` when practical.
-- If Goal mode cannot be confirmed, continue with the persistent role prompt and tell the user if it matters.
-
-Goal prompt shape:
+Before implementation or file edits, Leader must send a short user-facing decision:
 
 ```text
-/goal You are {ROLE_NAME} in a Leader-led Codex team.
-
-Objective: {ROLE_OBJECTIVE}
-
-Leader identity: {LEADER_ID_OR_CURRENT_THREAD}
-Your role slug: {ROLE_SLUG}
-User language: {USER_LANGUAGE}
-
-{ROLE_PROMPT}
+TEAM_DECISION: Leader-only / teammate team
+Reason: ...
+Execution: ...
 ```
+
+Use the user's language. Keep it short.
+
+If choosing Leader-only:
+
+- Say the task is simple or narrow enough for Leader to complete directly.
+- Say no teammate threads will be created for this run.
+- Continue without asking for extra confirmation unless the user requested role choice or team creation.
+
+If choosing teammates:
+
+- Name the roles and why they exist.
+- Create or reuse teammate threads before implementation.
+- Save/update the roster.
+
+## Token Budget
+
+- Save tokens by summarizing and referencing, not by hiding information a teammate needs to do good work.
+- Send each teammate the minimum complete assignment: role, Leader id, roster ref, objective, task, necessary context, acceptance criteria, dependencies, edit scope, output format.
+- Send the full roster only during first identity setup or when the roster changed. Later use `roster_ref` or the roster file path.
+- Do not resend full history, role catalogs, old task plans, or long explanations unless a teammate needs them.
+- Prefer task deltas: what changed, what to do next, and what to report.
+- Read only active or recently messaged teammate threads. Use small reads or latest-turn options when the tool supports them.
+- Do not poll completed or blocked teammates unless resuming them.
+- Avoid empty keepalive messages. If no work remains, complete or block goals and stop monitoring.
+- `MESSAGE_TO_LEADER` should contain only material cross-role information.
+- Keep `STATUS_PACKET` compact, preferably one line:
+  `role=... status=active|complete|blocked|goal_unconfirmed goal=... blocker=... needs=...`
+
+## Team Model
+
+Use a small team structure instead of long prompts:
+
+- Team record: the roster is the source of truth for Leader, teammates, thread ids, workspace, session notes, and current tasks.
+- Task board: Leader tracks only active work items with `id`, `owner`, `status`, `depends_on`, and `handoff_to`.
+- Mailbox: teammates send cross-role updates through `MESSAGE_TO_LEADER`; Leader forwards only useful parts to the right teammate.
+- Status lifecycle: `pending`, `active`, `blocked`, `complete`, `failed`, `goal_unconfirmed`.
+- Shared workspace: teammates work in the same project/root unless Leader explicitly isolates scope.
+- Session mode: preserve the current Codex permission/plan/goal posture when possible, but do not assume UI controls can be changed remotely.
+
+Team quality comes from structure, not verbosity:
+
+- Every delegated task needs an owner, objective, necessary context, acceptance criteria, scope, and handoff target when relevant.
+- Distinct roles should produce distinct deliverables. Do not flatten all teammates into generic assistants.
+- If work is risky or user-facing, assign review or QA before Leader finalizes.
+- If roles disagree, Leader keeps the disagreement visible, decides or asks the user, and routes the decision back to teammates.
+
+## Verified Goal Control
+
+- Do not rely on `/goal` text alone as proof of Goal mode.
+- Each teammate assignment is a task-scoped goal, not a permanent standby goal.
+- Start or resume work by asking the teammate to call `get_goal`; if no active goal exists, call `create_goal`; then call `get_goal` again and report whether `status=active`.
+- If goal tools are unavailable or verification fails, use `status=goal_unconfirmed` and continue only as a bounded normal task if Leader accepts that fallback.
+- When done, teammate calls `update_goal(status="complete")`, reports once, and stops.
+- When paused, blocked, or waiting for input, teammate calls `update_goal(status="blocked")`, reports once, and stops.
+- A blocked goal cannot be directly restored to active. To continue, ask the teammate to mark the blocked goal `complete`, create a fresh goal, call `get_goal`, and verify `status=active`.
+- Leader should also avoid idling with an active goal when no concrete work remains.
+
+## Compact Teammate Assignment
+
+Use this shape and fill only relevant fields:
+
+```text
+You are {ROLE_NAME}. Leader={LEADER_THREAD_ID}. lang={USER_LANGUAGE}. roster={ROSTER_REF}.
+
+Goal check:
+1. Call get_goal.
+2. If no active goal exists, create_goal("{OBJECTIVE}").
+3. Call get_goal again and report goal_status.
+
+Task id: {TASK_ID}
+Task: {TASK}
+Context: {NECESSARY_CONTEXT}
+Acceptance: {ACCEPTANCE_CRITERIA}
+Dependencies: {DEPENDENCIES_OR_NONE}
+Handoff: {WHO_NEEDS_THIS_NEXT_OR_NONE}
+Scope: {EDIT_SCOPE_OR_READ_ONLY}
+Constraints: {CONSTRAINTS}
+
+Rules: work only in role; protect user changes; route cross-role info through Leader.
+
+Output:
+RESULT: ...
+MESSAGE_TO_LEADER: ... (only if needed)
+STATUS_PACKET: task=... role=... status=active|complete|blocked|failed|goal_unconfirmed goal=... blocker=... needs=...
+
+Done: update_goal complete and stop. Waiting/paused: update_goal blocked and stop.
+```
+
+## Workflow
+
+1. Understand the task and user language.
+2. If the user says to set it as a goal, or goal tools are available for concrete work, create or confirm a Leader goal before implementation.
+3. Decide whether this is an explicit orchestrator request.
+4. Announce the visible team decision.
+5. Resolve roles and keep the team minimal.
+6. For teammate mode, create/reuse teammates before editing unless the user chose Leader-only.
+7. Create new teammate threads only when needed; rename them `<Role Name> - <team_name>`.
+8. Send identity once, then send compact task assignments.
+9. Save or update the roster after thread creation or role changes.
+10. Monitor active teammates, integrate results, route cross-role messages, and resolve conflicts.
+11. Review high-risk or user-facing outputs before finalizing.
+12. Complete or block idle goals and stop polling when no active delegated work remains.
 
 ## Roster
 
-Store rosters under:
+Default roster path:
 
 ```text
-$CODEX_HOME/team-rosters/
+<project_root>/.codex/team-rosters/{team_name}.json
 ```
 
-Fallback:
+Fallback only when no project root exists or the user wants a cross-project team:
 
 ```text
-C:\Users\<user>\.codex\team-rosters\
+$CODEX_HOME/team-rosters/{team_name}.json
 ```
 
-Roster shape:
+Keep rosters small. Suggested shape:
 
 ```json
 {
-  "team_name": "snake-default",
-  "scope": "project",
+  "team_name": "default",
   "project_root": "E:\\Project",
-  "leader_thread_id": "current-thread-or-id",
-  "leader_mode": "current_thread_or_durable_thread",
-  "role_catalog": {
-    "name": "software-core",
-    "policy": "suggested",
-    "source": "inline-or-path"
-  },
+  "leader_thread_id": "current-or-thread-id",
+  "monitoring_automation_id": null,
+  "role_catalog": {"name": null, "policy": "suggested"},
+  "tasks": [
+    {"id": "T1", "owner": "role_slug", "status": "active", "depends_on": [], "handoff_to": []}
+  ],
   "teammates": {
     "role_slug": {
-      "role": "Role Display Name",
+      "role": "Role Name",
       "thread_id": "...",
-      "purpose": "Why this role exists",
-      "allowed_to_edit": false
+      "allowed_to_edit": false,
+      "goal_status": "unknown",
+      "last_checked_at": null
     }
   }
 }
 ```
 
-## Workflow
+## Automation
 
-1. Choose operating mode:
-   - Direct task: current conversation is Leader.
-   - Existing team: reuse or update roster.
-   - Durable Leader: create a separate Leader only if the user asks.
-2. Resolve project scope. Prefer current project with `target.type = "project"` and `environment.type = "local"`.
-3. Resolve roles.
-4. Create or update current Leader goal if available.
-5. Decide whether teammates are needed.
-6. Create only useful teammates with `/goal` project-thread prompts.
-7. Rename teammate threads as `<Role Name> - <team_name>`.
-8. Save roster.
-9. Send each teammate an identity update with its own thread id, Leader id, roster, role rules, and user language.
-10. Send narrow tasks to teammates.
-11. Monitor teammates with `read_thread`.
-12. Integrate results and report concise status to the user.
+- Use automation only to wake Leader for monitoring, not to pause or resume teammate goals.
+- `automation_update.status` only has `ACTIVE` and `PAUSED`; it controls scheduled runs.
+- Default to low-frequency checks, usually 10-30 minutes, for long delegated work.
+- Pause or stop the monitoring automation when no teammate has active work.
+- Team pause: send block prompts to active teammates, then pause monitoring automation.
+- Team resume: reactivate monitoring if needed, then send fresh-goal resume prompts.
 
-## Communication
+## References
 
-Leader is the router. Teammates do not talk directly to each other.
-
-Every teammate response should include:
-
-```text
-MESSAGE_TO_LEADER:
-STATUS_PACKET:
-```
-
-Leader responses should include useful parts of:
-
-```text
-DECISION:
-TASKS_TO_SEND:
-TEAM_STATUS:
-RISKS:
-NEXT_STEP:
-```
-
-Monitoring rule:
-
-- After sending tasks, check each active teammate with `read_thread`.
-- For longer tasks, check again after meaningful progress or when the user asks for status.
-- If a teammate needs another teammate to know something, Leader forwards the message.
-
-## Role Catalogs
-
-Role catalogs are optional. Use them only when the user asks for reusable roles or project defaults.
-
-Catalog paths:
-
-- Project: `.codex/team-role-catalog.json`
-- User default: `$CODEX_HOME/team-role-catalogs/default.json`
-- Team-specific: `$CODEX_HOME/team-role-catalogs/{team_name}.json`
-
-Policies:
-
-- `suggested`: prefer catalog roles, but Leader may add roles when needed.
-- `locked`: use only catalog roles unless the user authorizes additions.
-
-See `references/user-role-catalog.md` for schema and examples.
-
-## Prompt Templates
-
-Read `references/role-prompts.md` when creating Leader or teammate prompts.
-
-Use examples there as examples only; roles are not fixed.
+- Read `references/role-prompts.md` only when prompt templates are needed.
+- Read `references/user-role-catalog.md` only when the user asks for reusable roles or catalogs.
 
 ## Safety
 
 - Do not let multiple teammates edit the same files concurrently.
-- Prefer critique, reviewer, user-simulator, strategy, and product roles as read-only unless Leader explicitly assigns edit scope.
-- Protect user changes.
-- Keep persistent teammate threads open unless the user asks to archive them.
+- Keep reviewer, product, strategy, and user-simulator roles read-only unless Leader assigns an edit scope.
+- Protect user changes and edits made by other agents.
+- Keep teammate threads open unless the user asks to archive them.

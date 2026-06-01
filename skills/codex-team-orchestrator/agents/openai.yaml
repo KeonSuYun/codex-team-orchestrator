@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Team Orchestrator"
   short_description: "Leader-led Codex project-thread teams"
-  default_prompt: "Use $codex-team-orchestrator. Act as Leader, ask me for roles if needed, then create useful Goal-mode teammates."
+  default_prompt: "Use $codex-team-orchestrator. Act as Leader, announce the team decision first, then use Leader-only or teammates as appropriate with verified task goals."
